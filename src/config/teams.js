@@ -1,30 +1,29 @@
 'use strict';
 
 /**
- * La Liga 2024/2025 teams with their SofaScore team IDs.
- * Slug is used for logging only.
+ * LaLiga 2025/2026 teams with their SofaScore team IDs.
  */
 const TEAMS = [
-  { id: 2817,  name: 'Barcelona'   },
+  { id: 2817,  name: 'Barcelona' },
   { id: 2829,  name: 'Real Madrid' },
-  { id: 2836,  name: 'Ath Madrid'  },
-  { id: 2833,  name: 'Sociedad'    },
-  { id: 2828,  name: 'Ath Bilbao'  },
-  { id: 2820,  name: 'Villarreal'  },
-  { id: 2818,  name: 'Betis'       },
-  { id: 2826,  name: 'Sevilla'     },
-  { id: 2821,  name: 'Mallorca'    },
-  { id: 2862,  name: 'Girona'      },
-  { id: 2835,  name: 'Celta'       },
-  { id: 2931,  name: 'Alaves'      },
-  { id: 2823,  name: 'Vallecano'   },
-  { id: 2827,  name: 'Las Palmas'  },
-  { id: 2816,  name: 'Osasuna'     },
-  { id: 2860,  name: 'Getafe'      },
-  { id: 2858,  name: 'Valencia'    },
-  { id: 2830,  name: 'Espanol'     },
-  { id: 2953,  name: 'Valladolid'  },
-  { id: 2840,  name: 'Leganes'     },
+  { id: 2836,  name: 'Atlético Madrid' },
+  { id: 2819,  name: 'Villarreal' },
+  { id: 2816,  name: 'Real Betis' },
+  { id: 2821,  name: 'Celta Vigo' },
+  { id: 2824,  name: 'Real Sociedad' },
+  { id: 2814,  name: 'Espanyol' },
+  { id: 2859,  name: 'Getafe' },
+  { id: 2825,  name: 'Athletic Club' },
+  { id: 2820,  name: 'Osasuna' },
+  { id: 24264, name: 'Girona FC' },
+  { id: 2818,  name: 'Rayo Vallecano' },
+  { id: 2828,  name: 'Valencia' },
+  { id: 2833,  name: 'Sevilla' },
+  { id: 2826,  name: 'Mallorca' },
+  { id: 2885,  name: 'Deportivo Alavés' },
+  { id: 2846,  name: 'Elche' },
+  { id: 2849,  name: 'Levante UD' },
+  { id: 2851,  name: 'Real Oviedo' },
 ];
 
 /**

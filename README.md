@@ -14,7 +14,7 @@ API para consultar calendario de partidos por equipo (competiciones activas) con
 - Variables de entorno:
   - `SUPABASE_URL`
   - `SUPABASE_ANON_KEY`
-  - `CALENDAR_TABLE` (opcional, default: `calendar`)
+  - `CALENDAR_TABLE` (opcional, default: `liga_calendar`)
 
 ## Instalacion
 
@@ -47,7 +47,7 @@ Variables de entorno que debes configurar en Vercel:
 - `SUPABASE_ANON_KEY`
 - `CALENDAR_TABLE` (opcional)
 
-Si quieres restringir ingesta manual en produccion, protege `POST /ingest/team` antes de exponer el endpoint.
+Si quieres restringir ingesta manual en produccion, protege `POST /ingest` y `POST /ingest/team` antes de exponer los endpoints.
 
 ## Ingesta de datos
 
@@ -63,12 +63,20 @@ Ingesta filtrada por temporada:
 INGEST_SEASON=25-26 npm run ingest
 ```
 
+Ingesta manual por API para todos los equipos (inserta nuevos partidos y actualiza existentes):
+
+```bash
+curl -X POST http://localhost:3000/ingest \
+  -H "Content-Type: application/json" \
+  -d '{"season":"25-26"}'
+```
+
 Ingesta manual por API para un solo equipo (inserta/actualiza en la tabla configurada):
 
 ```bash
 curl -X POST http://localhost:3000/ingest/team \
   -H "Content-Type: application/json" \
-  -d '{"team":"barcelona","season":"25-26"}'
+  -d '{"team":"Barcelona","season":"25-26"}'
 ```
 
 Formatos validos para `season`:
@@ -77,6 +85,31 @@ Formatos validos para `season`:
 - `YYYY-YY` (ej: `2025-26`)
 - `YY/YY` (ej: `25/26`)
 - `YY-YY` (ej: `25-26`)
+
+## Equipos soportados (nombre exacto)
+
+Usa estos nombres exactos cuando quieras referenciar equipos en ingesta por equipo:
+
+- `Barcelona` (2817)
+- `Real Madrid` (2829)
+- `Atlético Madrid` (2836)
+- `Villarreal` (2819)
+- `Real Betis` (2816)
+- `Celta Vigo` (2821)
+- `Real Sociedad` (2824)
+- `Espanyol` (2814)
+- `Getafe` (2859)
+- `Athletic Club` (2825)
+- `Osasuna` (2820)
+- `Girona FC` (24264)
+- `Rayo Vallecano` (2818)
+- `Valencia` (2828)
+- `Sevilla` (2833)
+- `Mallorca` (2826)
+- `Deportivo Alavés` (2885)
+- `Elche` (2846)
+- `Levante UD` (2849)
+- `Real Oviedo` (2851)
 
 ## Endpoints
 
@@ -91,8 +124,8 @@ Query params:
 
 Ejemplos:
 
-- `/calendar?team=barcelona`
-- `/calendar?team=barcelona&season=25-26`
+- `/calendar?team=Barcelona`
+- `/calendar?team=Barcelona&season=25-26`
 
 ### `GET /calendar/around`
 
@@ -106,8 +139,8 @@ Query params:
 
 Ejemplos:
 
-- `/calendar/around?team=barcelona&date=2026-03-16`
-- `/calendar/around?team=barcelona&date=2026-03-16&season=25-26`
+- `/calendar/around?team=Barcelona&date=2026-03-16`
+- `/calendar/around?team=Barcelona&date=2026-03-16&season=25-26`
 
 ### `GET /docs`
 
@@ -115,12 +148,20 @@ Devuelve documentacion de la API en JSON.
 
 ### `POST /ingest/team`
 
-Ejecuta ingesta manual de un equipo y hace upsert en la tabla configurada (`CALENDAR_TABLE` o `calendar` por defecto).
+Ejecuta ingesta manual de un equipo y hace upsert en la tabla configurada (`CALENDAR_TABLE` o `liga_calendar` por defecto).
 
 Body:
 
 - `team` (optional si envias `team_id`)
 - `team_id` (optional si envias `team`)
+- `season` (optional)
+
+### `POST /ingest`
+
+Ejecuta ingesta manual de todos los equipos trackeados y hace upsert en la tabla configurada.
+
+Body:
+
 - `season` (optional)
 
 ### `GET /docs/readme`

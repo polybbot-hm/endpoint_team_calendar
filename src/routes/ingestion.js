@@ -1,10 +1,40 @@
 'use strict';
 
 const { Router } = require('express');
-const { runTeamIngestion } = require('../ingestion/ingest');
+const { runIngestion, runTeamIngestion } = require('../ingestion/ingest');
 const { normalizeSeason } = require('../utils/season');
+const { getTableName } = require('../services/supabase');
 
 const router = Router();
+
+router.post('/ingest', async (req, res) => {
+  const { season } = req.body ?? {};
+
+  const normalizedSeason = season ? normalizeSeason(season) : null;
+  if (season && !normalizedSeason) {
+    return res.status(400).json({
+      error: 'Invalid body param: season. Use YYYY/YY, YYYY-YY, YY/YY or YY-YY',
+      example: {
+        season: '25-26',
+      },
+    });
+  }
+
+  try {
+    const result = await runIngestion({ season: normalizedSeason || undefined });
+
+    return res.json({
+      ok: true,
+      season: normalizedSeason || 'all',
+      table: getTableName(),
+      ...result,
+      message: 'Full ingestion completed successfully.',
+    });
+  } catch (err) {
+    console.error('[POST /ingest]', err.message);
+    return res.status(500).json({ error: 'Internal server error.' });
+  }
+});
 
 router.post('/ingest/team', async (req, res) => {
   const { team, team_id: teamId, season } = req.body ?? {};

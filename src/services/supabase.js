@@ -14,7 +14,7 @@ function getClient() {
   return _client;
 }
 
-const TABLE = process.env.CALENDAR_TABLE || 'calendar';
+const TABLE = process.env.CALENDAR_TABLE || 'liga_calendar';
 const BATCH = 500;
 
 // ---------------------------------------------------------------------------

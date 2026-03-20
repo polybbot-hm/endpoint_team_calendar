@@ -3,6 +3,7 @@
 const { Router } = require('express');
 const fs = require('fs');
 const path = require('path');
+const { TEAMS } = require('../config/teams');
 
 const router = Router();
 const README_PATH = path.resolve(__dirname, '..', '..', 'README.md');
@@ -15,6 +16,7 @@ router.get('/', (_req, res) => {
     endpoints: {
       'GET /calendar?team={name}[&season={season}]': 'All matches for a team, optionally filtered by season',
       'GET /calendar/around?team={name}&date={date}[&season={season}]': 'Closest previous and next match around a date',
+      'POST /ingest': 'Manual ingestion for all tracked teams into configured table',
       'POST /ingest/team': 'Manual ingestion for one team into configured table',
       'GET /docs': 'API documentation in JSON format',
       'GET /docs/readme': 'Project README in markdown',
@@ -29,6 +31,7 @@ router.get('/docs', (_req, res) => {
     name: 'La Liga Calendar API',
     version: '1.0.0',
     season_formats: ['YYYY/YY', 'YYYY-YY', 'YY/YY', 'YY-YY'],
+    supported_teams: TEAMS.map((team) => ({ id: team.id, name: team.name })),
     endpoints: [
       {
         method: 'GET',
@@ -39,7 +42,7 @@ router.get('/docs', (_req, res) => {
         },
         description:
           'Devuelve todos los partidos del equipo en competiciones activas (La Liga, Copa y Europa), con opción de filtrar temporada.',
-        example: '/calendar?team=barcelona&season=25-26',
+        example: '/calendar?team=Barcelona&season=25-26',
       },
       {
         method: 'GET',
@@ -51,7 +54,19 @@ router.get('/docs', (_req, res) => {
         },
         description:
           'Devuelve el partido anterior y el siguiente alrededor de una fecha, con filtro opcional de temporada.',
-        example: '/calendar/around?team=barcelona&date=2026-03-16&season=25-26',
+        example: '/calendar/around?team=Barcelona&date=2026-03-16&season=25-26',
+      },
+      {
+        method: 'POST',
+        path: '/ingest',
+        body: {
+          season: 'string (optional)',
+        },
+        description:
+          'Ejecuta la ingesta completa de todos los equipos y actualiza partidos existentes + inserta nuevos al avanzar competiciones.',
+        example: {
+          season: '25-26',
+        },
       },
       {
         method: 'POST',
@@ -64,7 +79,7 @@ router.get('/docs', (_req, res) => {
         description:
           'Ejecuta ingesta manual de todos los partidos del equipo en competiciones activas y hace upsert en la tabla configurada.',
         example: {
-          team: 'barcelona',
+          team: 'Barcelona',
           season: '25-26',
         },
       },

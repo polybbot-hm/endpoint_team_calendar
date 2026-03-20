@@ -149,6 +149,53 @@
         }
       }
     },
+    "/ingest": {
+      "post": {
+        "tags": ["Ingestion"],
+        "summary": "Ingesta manual completa",
+        "description": "Trae todos los partidos de todos los equipos trackeados en competiciones activas. Inserta nuevos y actualiza existentes por event_id.",
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "season": {
+                    "type": "string",
+                    "example": "25-26"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Ingesta completa finalizada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": { "type": "boolean" },
+                    "season": { "type": "string" },
+                    "table": { "type": "string" },
+                    "teams": { "type": "integer" },
+                    "matches": { "type": "integer" },
+                    "errors": { "type": "integer" },
+                    "message": { "type": "string" }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Parámetros inválidos"
+          }
+        }
+      }
+    },
     "/ingest/team": {
       "post": {
         "tags": ["Ingestion"],
@@ -163,7 +210,30 @@
                 "properties": {
                   "team": {
                     "type": "string",
-                    "example": "barcelona"
+                    "description": "Nombre exacto del equipo soportado.",
+                    "example": "Barcelona",
+                    "enum": [
+                      "Barcelona",
+                      "Real Madrid",
+                      "Atlético Madrid",
+                      "Villarreal",
+                      "Real Betis",
+                      "Celta Vigo",
+                      "Real Sociedad",
+                      "Espanyol",
+                      "Getafe",
+                      "Athletic Club",
+                      "Osasuna",
+                      "Girona FC",
+                      "Rayo Vallecano",
+                      "Valencia",
+                      "Sevilla",
+                      "Mallorca",
+                      "Deportivo Alavés",
+                      "Elche",
+                      "Levante UD",
+                      "Real Oviedo"
+                    ]
                   },
                   "team_id": {
                     "type": "integer",
