@@ -14,6 +14,7 @@ router.get('/', (_req, res) => {
     name: 'La Liga Calendar API',
     version: '1.0.0',
     endpoints: {
+      'GET /health': 'Healthcheck endpoint',
       'GET /calendar?team={name}[&season={season}]': 'All matches for a team, optionally filtered by season',
       'GET /calendar/around?team={name}&date={date}[&season={season}]': 'Closest previous and next match around a date',
       'POST /ingest': 'Manual ingestion for all tracked teams into configured table',
@@ -23,6 +24,14 @@ router.get('/', (_req, res) => {
       'GET /docs/openapi': 'OpenAPI specification in JSON format',
       'GET /docs/ui': 'Swagger UI',
     },
+  });
+});
+
+router.get('/health', (_req, res) => {
+  res.json({
+    ok: true,
+    service: 'La Liga Calendar API',
+    timestamp: new Date().toISOString(),
   });
 });
 
@@ -59,11 +68,14 @@ router.get('/docs', (_req, res) => {
       {
         method: 'POST',
         path: '/ingest',
+        query: {
+          season: 'string (optional)',
+        },
         body: {
           season: 'string (optional)',
         },
         description:
-          'Ejecuta la ingesta completa de todos los equipos y actualiza partidos existentes + inserta nuevos al avanzar competiciones.',
+          'Ejecuta la ingesta completa de todos los equipos y actualiza partidos existentes + inserta nuevos al avanzar competiciones. Acepta season por query o body.',
         example: {
           season: '25-26',
         },

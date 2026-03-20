@@ -8,12 +8,12 @@ const { getTableName } = require('../services/supabase');
 const router = Router();
 
 router.post('/ingest', async (req, res) => {
-  const { season } = req.body ?? {};
+  const season = req.body?.season ?? req.query?.season;
 
   const normalizedSeason = season ? normalizeSeason(season) : null;
   if (season && !normalizedSeason) {
     return res.status(400).json({
-      error: 'Invalid body param: season. Use YYYY/YY, YYYY-YY, YY/YY or YY-YY',
+      error: 'Invalid season. Use YYYY/YY, YYYY-YY, YY/YY or YY-YY',
       example: {
         season: '25-26',
       },

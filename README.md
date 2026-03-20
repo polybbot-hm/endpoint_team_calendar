@@ -34,20 +34,33 @@ o en produccion:
 npm start
 ```
 
-## Despliegue en Vercel
+## Despliegue en Railway
 
-El proyecto ya esta preparado para Vercel con:
+El proyecto ya esta preparado para Railway con:
 
-- `api/index.js` como entrypoint serverless
-- `vercel.json` con rewrite global para mantener rutas limpias (`/calendar`, `/docs`, etc.)
+- `railway.toml` con build/deploy configurado
+- `startCommand = "npm start"`
 
-Variables de entorno que debes configurar en Vercel:
+Variables de entorno que debes configurar en Railway:
 
 - `SUPABASE_URL`
 - `SUPABASE_ANON_KEY`
 - `CALENDAR_TABLE` (opcional)
 
 Si quieres restringir ingesta manual en produccion, protege `POST /ingest` y `POST /ingest/team` antes de exponer los endpoints.
+
+### Cron semanal en Railway (recomendado)
+
+Configura un cron job en Railway para llamar el endpoint de ingesta completa cada fin de semana.
+
+- Metodo: `POST`
+- URL: `https://TU-DOMINIO-RAILWAY/ingest`
+- Body: `{}` (o `{"season":"25-26"}`)
+- Cron (domingo 03:00 UTC): `0 3 * * 0`
+
+Tambien puedes pasar temporada por query:
+
+- `POST https://TU-DOMINIO-RAILWAY/ingest?season=25-26`
 
 ## Ingesta de datos
 
@@ -146,6 +159,10 @@ Ejemplos:
 
 Devuelve documentacion de la API en JSON.
 
+### `GET /health`
+
+Healthcheck simple para monitorizacion.
+
 ### `POST /ingest/team`
 
 Ejecuta ingesta manual de un equipo y hace upsert en la tabla configurada (`CALENDAR_TABLE` o `liga_calendar` por defecto).
@@ -160,7 +177,7 @@ Body:
 
 Ejecuta ingesta manual de todos los equipos trackeados y hace upsert en la tabla configurada.
 
-Body:
+Query/Body:
 
 - `season` (optional)
 

@@ -23,6 +23,17 @@
     }
   ],
   "paths": {
+    "/health": {
+      "get": {
+        "tags": ["Docs"],
+        "summary": "Healthcheck",
+        "responses": {
+          "200": {
+            "description": "Servicio operativo"
+          }
+        }
+      }
+    },
     "/calendar": {
       "get": {
         "tags": ["Calendar"],
@@ -154,6 +165,18 @@
         "tags": ["Ingestion"],
         "summary": "Ingesta manual completa",
         "description": "Trae todos los partidos de todos los equipos trackeados en competiciones activas. Inserta nuevos y actualiza existentes por event_id.",
+        "parameters": [
+          {
+            "name": "season",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "example": "25-26"
+            },
+            "description": "Temporada opcional por query. También se acepta en body."
+          }
+        ],
         "requestBody": {
           "required": false,
           "content": {
