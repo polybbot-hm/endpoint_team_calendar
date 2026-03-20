@@ -1,0 +1,278 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "La Liga Calendar API",
+    "description": "API para obtener partidos por equipo en competiciones activas (La Liga, Copa y torneos UEFA), con filtro opcional de temporada.",
+    "version": "1.1.0"
+  },
+  "servers": [
+    {
+      "url": "http://localhost:3000",
+      "description": "Local"
+    }
+  ],
+  "tags": [
+    {
+      "name": "Calendar"
+    },
+    {
+      "name": "Ingestion"
+    },
+    {
+      "name": "Docs"
+    }
+  ],
+  "paths": {
+    "/calendar": {
+      "get": {
+        "tags": ["Calendar"],
+        "summary": "Partidos de un equipo",
+        "description": "Devuelve todos los partidos del equipo en competiciones activas. Permite filtrar por temporada.",
+        "parameters": [
+          {
+            "name": "team",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Nombre del equipo (coincidencia parcial, case-insensitive)."
+          },
+          {
+            "name": "season",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "example": "25-26"
+            },
+            "description": "Temporada. Formatos: YYYY/YY, YYYY-YY, YY/YY, YY-YY."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Listado de partidos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "team": { "type": "string" },
+                    "season": { "type": "string" },
+                    "total": { "type": "integer" },
+                    "competitions": {
+                      "type": "array",
+                      "items": { "type": "string" }
+                    },
+                    "matches": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Match"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Parámetros inválidos"
+          },
+          "404": {
+            "description": "No se encontraron partidos"
+          }
+        }
+      }
+    },
+    "/calendar/around": {
+      "get": {
+        "tags": ["Calendar"],
+        "summary": "Partido anterior y siguiente",
+        "description": "Dado un equipo y una fecha, devuelve el partido anterior y el siguiente. Permite filtrar por temporada.",
+        "parameters": [
+          {
+            "name": "team",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "date",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date",
+              "example": "2026-03-16"
+            }
+          },
+          {
+            "name": "season",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "example": "2025/26"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Partidos alrededor de la fecha",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "team": { "type": "string" },
+                    "reference_date": { "type": "string", "format": "date" },
+                    "season": { "type": "string" },
+                    "previous": {
+                      "anyOf": [{ "$ref": "#/components/schemas/Match" }, { "type": "null" }]
+                    },
+                    "next": {
+                      "anyOf": [{ "$ref": "#/components/schemas/Match" }, { "type": "null" }]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Parámetros inválidos"
+          },
+          "404": {
+            "description": "No se encontraron partidos"
+          }
+        }
+      }
+    },
+    "/ingest/team": {
+      "post": {
+        "tags": ["Ingestion"],
+        "summary": "Ingesta manual por equipo",
+        "description": "Trae todos los partidos del equipo en competiciones activas y hace upsert en la tabla configurada.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "team": {
+                    "type": "string",
+                    "example": "barcelona"
+                  },
+                  "team_id": {
+                    "type": "integer",
+                    "example": 2817
+                  },
+                  "season": {
+                    "type": "string",
+                    "example": "25-26"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Ingesta completada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": { "type": "boolean" },
+                    "team": { "type": "string" },
+                    "team_id": { "type": "integer" },
+                    "season": { "type": "string" },
+                    "competitions": {
+                      "type": "array",
+                      "items": { "type": "string" }
+                    },
+                    "fetched": { "type": "integer" },
+                    "upserted": { "type": "integer" },
+                    "table": { "type": "string" },
+                    "message": { "type": "string" }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Parámetros inválidos o equipo no encontrado"
+          }
+        }
+      }
+    },
+    "/docs": {
+      "get": {
+        "tags": ["Docs"],
+        "summary": "Documentación JSON resumida",
+        "responses": {
+          "200": {
+            "description": "Resumen de documentación"
+          }
+        }
+      }
+    },
+    "/docs/readme": {
+      "get": {
+        "tags": ["Docs"],
+        "summary": "README en markdown",
+        "responses": {
+          "200": {
+            "description": "Contenido del README.md"
+          }
+        }
+      }
+    },
+    "/docs/openapi": {
+      "get": {
+        "tags": ["Docs"],
+        "summary": "Especificación OpenAPI en JSON",
+        "responses": {
+          "200": {
+            "description": "OpenAPI JSON"
+          }
+        }
+      }
+    },
+    "/docs/ui": {
+      "get": {
+        "tags": ["Docs"],
+        "summary": "Interfaz Swagger UI",
+        "responses": {
+          "200": {
+            "description": "HTML de Swagger UI"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Match": {
+        "type": "object",
+        "properties": {
+          "event_id": { "type": "integer" },
+          "home_team": { "type": "string", "nullable": true },
+          "away_team": { "type": "string", "nullable": true },
+          "match_date": { "type": "string", "format": "date" },
+          "match_time": { "type": "string", "example": "20:00" },
+          "competition": { "type": "string" },
+          "round": { "type": "string", "nullable": true },
+          "status": { "type": "string" },
+          "home_score": { "type": "integer", "nullable": true },
+          "away_score": { "type": "integer", "nullable": true },
+          "season": { "type": "string" },
+          "updated_at": { "type": "string", "format": "date-time" }
+        }
+      }
+    }
+  }
+}

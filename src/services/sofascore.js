@@ -2,14 +2,9 @@
 
 const axios = require('axios');
 const { TRACKED_TOURNAMENTS } = require('../config/teams');
+const { normalizeSeason, seasonFromDate } = require('../utils/season');
 
 const BASE_URL = 'https://api.sofascore.com/api/v1';
-
-// Season window: all events between these dates are considered in-scope.
-// Adjust year constants when a new season starts.
-const SEASON      = '2025/26';
-const SEASON_START = new Date('2025-07-01T00:00:00Z');
-const SEASON_END   = new Date('2026-07-31T23:59:59Z');
 
 const http = axios.create({
   baseURL: BASE_URL,
@@ -44,17 +39,17 @@ async function fetchPage(teamId, direction, page) {
 /**
  * Paginates through events in one direction until:
  *   - there are no more pages (404 or empty response), or
- *   - every event on a page is outside the season window (early-exit), or
  *   - the safety page cap is reached.
  *
  * @param {number} teamId
  * @param {'next'|'last'} direction
+ * @param {{ seasonFilter: string|null }} options
  * @returns {Promise<Object[]>} Normalised in-scope events
  */
-async function paginateDirection(teamId, direction) {
+async function paginateDirection(teamId, direction, { seasonFilter }) {
   const results = [];
 
-  for (let page = 0; page <= 30; page++) {
+  for (let page = 0; page <= 60; page++) {
     let events;
     try {
       events = await fetchPage(teamId, direction, page);
@@ -65,30 +60,14 @@ async function paginateDirection(teamId, direction) {
 
     if (!events.length) break;
 
-    let allBeyondWindow = true;
-
     for (const ev of events) {
-      const ts = new Date(ev.startTimestamp * 1000);
-
-      if (ts < SEASON_START || ts > SEASON_END) {
-        // Event is outside the window but other events on this page may not be
-        continue;
-      }
-
-      allBeyondWindow = false;
-
       if (isTracked(ev)) {
-        results.push(toRow(ev));
+        const row = toRow(ev);
+        if (!seasonFilter || row.season === seasonFilter) {
+          results.push(row);
+        }
       }
     }
-
-    // Early-exit: going backwards past season start, or forwards past season end
-    const firstTs = new Date(events[0].startTimestamp * 1000);
-    const lastTs  = new Date(events[events.length - 1].startTimestamp * 1000);
-
-    if (direction === 'last' && lastTs < SEASON_START) break;
-    if (direction === 'next' && firstTs > SEASON_END)  break;
-    if (allBeyondWindow) break;
   }
 
   return results;
@@ -111,6 +90,7 @@ function isTracked(ev) {
 function toRow(ev) {
   const date = new Date(ev.startTimestamp * 1000);
   const tid  = ev.tournament?.uniqueTournament?.id;
+  const season = getEventSeason(ev, date);
 
   const homeScore = ev.homeScore?.current ?? null;
   const awayScore = ev.awayScore?.current ?? null;
@@ -126,9 +106,25 @@ function toRow(ev) {
     status:      mapStatus(ev.status?.type),
     home_score:  homeScore,
     away_score:  awayScore,
-    season:      SEASON,
+    season,
     updated_at:  new Date().toISOString(),
   };
+}
+
+/**
+ * Extrae la temporada del evento y la normaliza.
+ * Si SofaScore no la trae, se calcula a partir de la fecha del partido.
+ *
+ * @param {Object} ev
+ * @param {Date} date
+ * @returns {string}
+ */
+function getEventSeason(ev, date) {
+  const fromEvent =
+    normalizeSeason(ev?.season?.name) ||
+    normalizeSeason(ev?.season?.year);
+
+  return fromEvent || seasonFromDate(date);
 }
 
 /**
@@ -156,16 +152,22 @@ function mapStatus(type) {
 // ---------------------------------------------------------------------------
 
 /**
- * Fetches all tracked matches for a team in the current season.
+ * Fetches all tracked matches for a team.
  * Combines past and future events, deduplicates by event_id, sorts by date.
  *
  * @param {number} teamId  SofaScore team ID
+ * @param {{ season?: string }} [options]
  * @returns {Promise<Object[]>}  Array of match rows ready for Supabase
  */
-async function fetchTeamMatches(teamId) {
+async function fetchTeamMatches(teamId, options = {}) {
+  const seasonFilter = options.season ? normalizeSeason(options.season) : null;
+  if (options.season && !seasonFilter) {
+    throw new Error('Invalid season format. Use YYYY/YY, YYYY-YY, YY/YY or YY-YY.');
+  }
+
   const [past, upcoming] = await Promise.all([
-    paginateDirection(teamId, 'last'),
-    paginateDirection(teamId, 'next'),
+    paginateDirection(teamId, 'last', { seasonFilter }),
+    paginateDirection(teamId, 'next', { seasonFilter }),
   ]);
 
   // Deduplicate: a match appears in both teams' feeds — keep the latest copy

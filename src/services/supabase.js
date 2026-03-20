@@ -14,7 +14,7 @@ function getClient() {
   return _client;
 }
 
-const TABLE = 'calendar';
+const TABLE = process.env.CALENDAR_TABLE || 'calendar';
 const BATCH = 500;
 
 // ---------------------------------------------------------------------------
@@ -57,18 +57,25 @@ async function upsertMatches(rows) {
  * home_team and away_team columns.
  *
  * @param {string} team  Full or partial team name
+ * @param {string|null} [season] Temporada canónica YYYY/YY
  * @returns {Promise<Object[]>}
  */
-async function getMatchesByTeam(team) {
+async function getMatchesByTeam(team, season = null) {
   const db = getClient();
   const pattern = `%${team}%`;
 
-  const { data, error } = await db
+  let query = db
     .from(TABLE)
     .select('*')
     .or(`home_team.ilike.${pattern},away_team.ilike.${pattern}`)
     .order('match_date', { ascending: true })
     .order('match_time', { ascending: true });
+
+  if (season) {
+    query = query.eq('season', season);
+  }
+
+  const { data, error } = await query;
 
   if (error) throw new Error(`Supabase query error: ${error.message}`);
   return data ?? [];
@@ -81,32 +88,38 @@ async function getMatchesByTeam(team) {
  *
  * @param {string} team        Team name (matched with ilike)
  * @param {string} date        Reference date  YYYY-MM-DD
+ * @param {string|null} [season] Temporada canónica YYYY/YY
  * @returns {Promise<{ previous: Object|null, next: Object|null }>}
  */
-async function getMatchesAround(team, date) {
+async function getMatchesAround(team, date, season = null) {
   const db = getClient();
   const pattern = `%${team}%`;
   const teamFilter = `home_team.ilike.${pattern},away_team.ilike.${pattern}`;
 
-  const [prevRes, nextRes] = await Promise.all([
-    db
+  let prevQuery = db
       .from(TABLE)
       .select('*')
       .or(teamFilter)
       .lt('match_date', date)
       .order('match_date', { ascending: false })
       .order('match_time', { ascending: false })
-      .limit(1),
+      .limit(1);
 
-    db
+  let nextQuery = db
       .from(TABLE)
       .select('*')
       .or(teamFilter)
       .gt('match_date', date)
       .order('match_date', { ascending: true })
       .order('match_time', { ascending: true })
-      .limit(1),
-  ]);
+      .limit(1);
+
+  if (season) {
+    prevQuery = prevQuery.eq('season', season);
+    nextQuery = nextQuery.eq('season', season);
+  }
+
+  const [prevRes, nextRes] = await Promise.all([prevQuery, nextQuery]);
 
   if (prevRes.error) throw new Error(`Supabase query error: ${prevRes.error.message}`);
   if (nextRes.error) throw new Error(`Supabase query error: ${nextRes.error.message}`);
@@ -117,4 +130,8 @@ async function getMatchesAround(team, date) {
   };
 }
 
-module.exports = { upsertMatches, getMatchesByTeam, getMatchesAround };
+function getTableName() {
+  return TABLE;
+}
+
+module.exports = { upsertMatches, getMatchesByTeam, getMatchesAround, getTableName };
